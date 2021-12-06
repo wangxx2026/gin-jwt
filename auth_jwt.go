@@ -576,7 +576,7 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 }
 
 // RefreshToken refresh token and check if token is expired
-func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context) (string, time.Time, error) {
+func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context, userSig string) (string, time.Time, error) {
 	claims, err := mw.CheckIfTokenExpire(c)
 	if err != nil {
 		return "", time.Now(), err
@@ -593,7 +593,8 @@ func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context) (string, time.Time, err
 	expire := mw.TimeFunc().Add(mw.Timeout)
 	newClaims["exp"] = expire.Unix()
 	newClaims["orig_iat"] = mw.TimeFunc().Unix()
-	tokenString, err := mw.signedString(newToken)
+	newClaims["user_sig"] = userSig
+ 	tokenString, err := mw.signedString(newToken)
 
 	if err != nil {
 		return "", time.Now(), err
