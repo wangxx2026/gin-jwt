@@ -594,7 +594,7 @@ func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context) (string, time.Time, err
 
 	if mw.RefreshFunc != nil {
 		for key, value := range mw.RefreshFunc(c) {
-			claims[key] = value
+			newClaims[key] = value
 		}
 	}
 
