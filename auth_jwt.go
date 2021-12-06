@@ -63,6 +63,8 @@ type GinJWTMiddleware struct {
 	// Optional, by default no additional data will be set.
 	PayloadFunc func(data interface{}) MapClaims
 
+
+	RefreshFunc func(c *gin.Context) MapClaims
 	// User can define own Unauthorized func.
 	Unauthorized func(c *gin.Context, code int, message string)
 
@@ -576,7 +578,7 @@ func (mw *GinJWTMiddleware) RefreshHandler(c *gin.Context) {
 }
 
 // RefreshToken refresh token and check if token is expired
-func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context, userSig string) (string, time.Time, error) {
+func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context) (string, time.Time, error) {
 	claims, err := mw.CheckIfTokenExpire(c)
 	if err != nil {
 		return "", time.Now(), err
@@ -590,11 +592,16 @@ func (mw *GinJWTMiddleware) RefreshToken(c *gin.Context, userSig string) (string
 		newClaims[key] = claims[key]
 	}
 
+	if mw.RefreshFunc != nil {
+		for key, value := range mw.RefreshFunc(c) {
+			claims[key] = value
+		}
+	}
+
 	expire := mw.TimeFunc().Add(mw.Timeout)
 	newClaims["exp"] = expire.Unix()
 	newClaims["orig_iat"] = mw.TimeFunc().Unix()
-	newClaims["user_sig"] = userSig
- 	tokenString, err := mw.signedString(newToken)
+	tokenString, err := mw.signedString(newToken)
 
 	if err != nil {
 		return "", time.Now(), err
